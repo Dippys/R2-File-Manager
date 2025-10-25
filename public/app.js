@@ -7,6 +7,7 @@ let filteredFiles = []; // Files after search filter
 let currentPage = 1;
 let pageSize = 100;
 let searchQuery = '';
+let statsInterval = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,20 +17,50 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('breadcrumb-root').addEventListener('click', () => {
         navigateToPath('');
     });
+    
+    // Start stats polling
+    updateStats();
+    statsInterval = setInterval(updateStats, 3000); // Update every 3 seconds
 });
 
+// Fetch and update system stats
+async function updateStats() {
+    try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Cache stats
+            const cacheText = `${data.cache.folders} folders, ${data.cache.totalItems} items`;
+            document.getElementById('cacheStats').textContent = cacheText;
+            
+            // RAM stats
+            const ramText = `${data.memory.heapUsed}MB / ${data.memory.heapTotal}MB`;
+            document.getElementById('ramStats').textContent = ramText;
+            
+            // CPU stats (show uptime)
+            const uptimeMin = Math.floor(data.uptime / 60);
+            const cpuText = `Up ${uptimeMin}m`;
+            document.getElementById('cpuStats').textContent = cpuText;
+        }
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+    }
+}
+
 // Load files from server
-async function loadFiles(prefix = '') {
+async function loadFiles(prefix = '', forceRefresh = false) {
     const fileList = document.getElementById('fileList');
     fileList.innerHTML = `
         <div class="loading">
             <div class="spinner"></div>
-            <p>Loading files...</p>
+            <p>${forceRefresh ? 'Refreshing...' : 'Loading files...'}</p>
         </div>
     `;
 
     try {
-        const response = await fetch(`/api/files?prefix=${encodeURIComponent(prefix)}`);
+        const refreshParam = forceRefresh ? '&refresh=true' : '';
+        const response = await fetch(`/api/files?prefix=${encodeURIComponent(prefix)}${refreshParam}`);
         const data = await response.json();
 
         if (data.success) {
@@ -40,6 +71,11 @@ async function loadFiles(prefix = '') {
             document.getElementById('searchInput').value = '';
             applyFiltersAndRender();
             updateBreadcrumb();
+            
+            // Show toast if refreshed
+            if (forceRefresh) {
+                showToast(`✅ Refreshed: ${data.cached ? 'from cache' : 'from R2'}`);
+            }
         } else {
             throw new Error(data.error || 'Failed to load files');
         }
@@ -53,6 +89,32 @@ async function loadFiles(prefix = '') {
             </div>
         `;
     }
+}
+
+// Refresh current folder
+async function refreshCurrentFolder() {
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Refreshing...';
+    
+    await loadFiles(currentPath, true);
+    
+    btn.disabled = false;
+    btn.textContent = '🔄 Refresh';
+}
+
+// Show toast notification
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
 }
 
 // Apply search filter and pagination
@@ -475,6 +537,8 @@ async function uploadFile() {
         
         if (data.success) {
             errorDiv.innerHTML = '<div class="success-message">File uploaded successfully!</div>';
+            // Clear cache for current path
+            await clearCache(currentPath);
             setTimeout(() => {
                 closeUploadModal();
                 refreshFiles();
@@ -531,6 +595,8 @@ async function replaceFile() {
         
         if (data.success) {
             errorDiv.innerHTML = '<div class="success-message">File replaced successfully!</div>';
+            // Clear cache for current path
+            await clearCache(currentPath);
             setTimeout(() => {
                 closeReplaceModal();
                 refreshFiles();
@@ -562,6 +628,8 @@ async function deleteFile() {
         
         if (data.success) {
             alert('File deleted successfully!');
+            // Clear cache for current path
+            await clearCache(currentPath);
             selectedFile = null;
             document.getElementById('replaceBtn').disabled = true;
             document.getElementById('deleteBtn').disabled = true;
@@ -572,5 +640,21 @@ async function deleteFile() {
     } catch (error) {
         console.error('Error deleting file:', error);
         alert(`Error deleting file: ${error.message}`);
+    }
+}
+
+// Clear cache for a specific path
+async function clearCache(prefix) {
+    try {
+        await fetch('/api/cache/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prefix }),
+        });
+        console.log(`🧹 Cache cleared for: "${prefix}"`);
+    } catch (error) {
+        console.error('Error clearing cache:', error);
     }
 }

@@ -54,6 +54,34 @@
             opacity: 0.9;
         }
 
+        .stats-bar {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 12px;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
         .breadcrumb {
             padding: 15px 20px;
             background: white;
@@ -75,6 +103,35 @@
 
         .breadcrumb span:hover {
             text-decoration: underline;
+        }
+
+        .btn-refresh {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-refresh:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-refresh:active {
+            transform: translateY(0);
+        }
+
+        .btn-refresh:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .file-list {
@@ -452,6 +509,28 @@
             border: 1px solid #c3e6cb;
         }
 
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-size: 14px;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 10000;
+        }
+
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
@@ -473,9 +552,26 @@
                 <h1>📁 R2 File Manager</h1>
                 <p>Cloudflare R2 Storage</p>
             </div>
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">
+                    <span class="stat-label">📦 Cache:</span>
+                    <span class="stat-value" id="cacheStats">Loading...</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">🧠 RAM:</span>
+                    <span class="stat-value" id="ramStats">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">⚡ CPU:</span>
+                    <span class="stat-value" id="cpuStats">-</span>
+                </div>
+            </div>
             <div class="breadcrumb">
                 <span id="breadcrumb-root">Root</span>
                 <span id="breadcrumb-path"></span>
+                <button class="btn-refresh" id="refreshBtn" onclick="refreshCurrentFolder()" title="Refresh current folder">
+                    🔄 Refresh
+                </button>
             </div>
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search files..." oninput="handleSearch()" />

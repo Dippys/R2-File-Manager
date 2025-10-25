@@ -4,8 +4,12 @@ import helmet from 'helmet';
 import fileUpload from 'express-fileupload';
 import { config } from './config';
 import fileRoutes from './routes/fileRoutes';
+import { R2Client } from './r2Client';
 
 const app = express();
+
+// Initialize R2 client
+export const r2Client = new R2Client(config.r2);
 
 // Middleware
 app.use(helmet({
@@ -32,10 +36,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Start server
-app.listen(config.server.port, () => {
+// Start server and preload root directory
+app.listen(config.server.port, async () => {
   console.log(`Server running on http://localhost:${config.server.port}`);
   console.log(`API available at http://localhost:${config.server.port}/api`);
+  
+  // Preload root directory in background
+  console.log('\n🚀 Starting background preload of root directory...');
+  r2Client.preloadRootDirectory().catch(err => {
+    console.error('Failed to preload root directory:', err);
+  });
 });
 
 export default app;

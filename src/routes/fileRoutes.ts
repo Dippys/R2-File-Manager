@@ -1,29 +1,91 @@
 import express, { Request, Response } from 'express';
-import { R2Client } from '../r2Client';
-import { config } from '../config';
+import { r2Client } from '../index';
 
 const router = express.Router();
-const r2Client = new R2Client(config.r2);
 
 /**
  * List files and folders
- * GET /api/files?prefix=path/to/folder
+ * GET /api/files?prefix=path/to/folder&refresh=true
  */
 router.get('/files', async (req: Request, res: Response) => {
   try {
     const prefix = (req.query.prefix as string) || '';
-    const files = await r2Client.listFiles(prefix);
+    const forceRefresh = req.query.refresh === 'true';
+    const files = await r2Client.listFiles(prefix, forceRefresh);
     
     res.json({
       success: true,
       prefix,
       files,
+      cached: !forceRefresh, // Let frontend know if this was from cache
     });
   } catch (error) {
     console.error('Error listing files:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to list files',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * Get system stats (cache, memory, CPU)
+ * GET /api/stats
+ */
+router.get('/stats', async (req: Request, res: Response) => {
+  try {
+    const stats = r2Client.getStats();
+    const memUsage = process.memoryUsage();
+    const cpuUsage = process.cpuUsage();
+    
+    res.json({
+      success: true,
+      cache: {
+        folders: stats.cachedFolders,
+        totalItems: stats.totalCachedItems,
+        oldestCache: stats.oldestCacheAge,
+      },
+      memory: {
+        heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
+        heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
+        rss: Math.round(memUsage.rss / 1024 / 1024), // MB
+        external: Math.round(memUsage.external / 1024 / 1024), // MB
+      },
+      cpu: {
+        user: Math.round(cpuUsage.user / 1000), // ms
+        system: Math.round(cpuUsage.system / 1000), // ms
+      },
+      uptime: Math.round(process.uptime()), // seconds
+    });
+  } catch (error) {
+    console.error('Error getting stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get stats',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * Clear cache for a specific prefix or all cache
+ * POST /api/cache/clear
+ */
+router.post('/cache/clear', async (req: Request, res: Response) => {
+  try {
+    const prefix = req.body.prefix as string | undefined;
+    r2Client.clearCache(prefix);
+    
+    res.json({
+      success: true,
+      message: prefix ? `Cache cleared for prefix: ${prefix}` : 'All cache cleared',
+    });
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear cache',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
