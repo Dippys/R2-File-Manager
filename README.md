@@ -56,8 +56,8 @@ A high-performance Node.js TypeScript application for managing files in Cloudfla
 Clone the repository and install dependencies:
 
 ```powershell
-git clone <your-repo-url>
-cd MeBomba
+git clone https://github.com/Dippys/R2-File-Manager
+cd R2-File-Manager
 npm install
 ```
 
@@ -212,7 +212,7 @@ Clears cache for specific prefix or entire cache if no prefix provided.
 ## 📂 Project Structure
 
 ```
-MeBomba/
+R2-File-Manager/
 ├── src/
 │   ├── index.ts              # Application entry point
 │   ├── config.ts             # Environment configuration
@@ -229,7 +229,6 @@ MeBomba/
 ├── .gitignore               # Git ignore rules
 ├── package.json             # Dependencies and scripts
 ├── tsconfig.json            # TypeScript configuration
-├── CACHE_PERSISTENCE.md     # Cache documentation
 ├── LICENSE                  # MIT License
 └── README.md                # This file
 ```
@@ -397,9 +396,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 If you encounter any issues or have questions:
 1. Check the [Troubleshooting](#-troubleshooting) section
-2. Review the [CACHE_PERSISTENCE.md](CACHE_PERSISTENCE.md) documentation
-3. Open an issue on GitHub
-4. Check Cloudflare R2 status page for service issues
+2. Open an issue on GitHub
+3. Check Cloudflare R2 status page for service issues
 
 ---
 
