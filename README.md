@@ -2,6 +2,10 @@
 
 A high-performance Node.js TypeScript application for managing files in Cloudflare R2 storage with an intelligent caching system and beautiful web interface.
 
+![R2 File Manager Interface](https://i.imgur.com/0OvSEqK.png)
+
+![File Preview and Audio Player](https://i.imgur.com/0jxagQc.png)
+
 ## 🌟 Features
 
 ### 📁 **Full File Management**
